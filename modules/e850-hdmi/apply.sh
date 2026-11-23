@@ -65,6 +65,12 @@ grep -q 'select FB_CFB_IMAGEBLIT' $KC ||
     sed -i '/^config EXYNOS_DPU30$/,/^config / s|^\tdepends on \(.*\)$|\tdepends on \1\n\tselect FB_CFB_FILLRECT\n\tselect FB_CFB_COPYAREA\n\tselect FB_CFB_IMAGEBLIT|' $KC
 grep -n -A6 '^config EXYNOS_DPU30$' $KC
 # include the DT
+# The SoC dts of the Linaro tree has the whole display commented out (//#include "s5e3830-dpu.dtsi"): the board
+# overlay's &decon_f/&dsim_0/&panel_0 then have no symbol and fdtoverlay fails with FDT_ERR_NOTFOUND.
+# docs/E85096-LINUX510-BOOT.md 8.2 did this by hand; the script did not.
+S=$K/arch/arm64/boot/dts/exynos/s5e3830.dts
+sed -i 's|^//#include "s5e3830-dpu.dtsi"|#include "s5e3830-dpu.dtsi"|' $S
+grep -n '^#include "s5e3830-dpu.dtsi"' $S
 D=$K/arch/arm64/boot/dts/exynos/board/erd/s5e3830-erd3830.dts
 grep -q s5e3830-e850-hdmi.dtsi $D ||
     sed -i 's|^#include "camera/s5e3830-e850-ov5647-camera.dtsi"|&\n#include "s5e3830-e850-hdmi.dtsi"|' $D

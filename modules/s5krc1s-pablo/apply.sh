@@ -14,6 +14,25 @@ BOARD=arch/arm64/boot/dts/exynos/board/erd/s5e3830-erd3830.dts
 cp -v "$HERE"/files/$CIS/is-cis-s5krc1s* "$K/$CIS/"
 cp -v "$HERE"/files/arch/arm64/boot/dts/exynos/board/erd/camera/*s5krc1s* \
       "$K/arch/arm64/boot/dts/exynos/board/erd/camera/"
+# The public Linaro android-exynos-5.10-linaro tree (3b6b9ca5) has no S5KRC1S entry: register it
+# like ov5647-pablo/apply.sh does (42 is the free slot between S5K5E9 41 and S5KGM1SP 43).
+for h in include/dt-bindings/camera/exynos_is_dt.h \
+         drivers/media/platform/exynos/camera/include/exynos_is_dt.h; do
+    grep -q SENSOR_NAME_S5KRC1S "$K/$h" ||
+        sed -i 's|^#define SENSOR_NAME_S5K5E9\t.*|&\n#define SENSOR_NAME_S5KRC1S\t\t42|' "$K/$h"
+    grep -n SENSOR_NAME_S5KRC1S "$K/$h"
+done
+grep -q CAMERA_CIS_S5KRC1S_OBJ "$K/$CIS/Kconfig" || cat >> "$K/$CIS/Kconfig" <<'EOF2'
+
+config CAMERA_CIS_S5KRC1S_OBJ
+	tristate "Use S5KRC1S (DVS) camera cis"
+	depends on CAMERA_CIS_SELECT
+	default n
+	help
+	  Samsung S5KRC1S dynamic vision sensor CIS driver (E850-96 CN4, 2-lane RAW8 transport).
+EOF2
+grep -q is-cis-s5krc1s.o "$K/$CIS/Makefile" ||
+    echo 'obj-$(CONFIG_CAMERA_CIS_S5KRC1S_OBJ) += is-cis-s5krc1s.o' >> "$K/$CIS/Makefile"
 grep -q SENSOR_NAME_S5KRC1S "$K/include/dt-bindings/camera/exynos_is_dt.h"
 grep -q CAMERA_CIS_S5KRC1S_OBJ "$K/$CIS/Kconfig"
 
